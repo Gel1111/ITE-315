@@ -12,6 +12,7 @@ class StudentModel extends Model
         'firstname',
         'middlename',
         'lastname',
+        'course',
         'year',
         'section',
     ];
