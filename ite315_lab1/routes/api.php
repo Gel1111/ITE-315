@@ -2,10 +2,10 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use app\Http\Controllers\StudentController;
+use App\Http\Controllers\StudentController;
 
 
-Route::apiResource('Students', StudentController::class);
+Route::apiResource('students', StudentController::class);
 
 //Route::get('/user', function (Request $request) {
 //    return $request->user();

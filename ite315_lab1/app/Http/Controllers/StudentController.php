@@ -4,38 +4,44 @@ namespace App\Http\Controllers;
 
 use App\Models\StudentModel;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class StudentController extends Controller
 {
     // Display all students
     public function index()
     {
-        $students = StudentModel::all();
-
-        return view('students.index', compact('students'));
+        return response()->json([
+            'success' => true,
+            'message' => 'Students retrieved successfully.',
+            'data' => StudentModel::all()
+        ], 200);
     }
 
     // Store a new student
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'firstname' => 'required|string|max:255',
             'middlename' => 'nullable|string|max:255',
             'lastname' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:students,email',
+            'course' => 'required|string|max:255',
             'year' => 'required|string|max:50',
             'section' => 'required|string|max:100',
+        ], [
+            'email.unique' => 'This email address is already registered.',
+            'email.required' => 'Email address is required.',
+            'email.email' => 'Please enter a valid email address.',
         ]);
 
-        StudentModel::create($request->only([
-            'firstname',
-            'middlename',
-            'lastname',
-            'year',
-            'section',
-        ]));
+        $student = StudentModel::create($validated);
 
-        return redirect()->route('students.index')
-            ->with('success', 'Student added successfully.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Student added successfully.',
+            'data' => $student
+        ], 201);
     }
 
     // Display one student
@@ -43,32 +49,44 @@ class StudentController extends Controller
     {
         $student = StudentModel::findOrFail($id);
 
-        return view('students.show', compact('student'));
+        return response()->json([
+            'success' => true,
+            'message' => 'Student retrieved successfully.',
+            'data' => $student
+        ], 200);
     }
 
     // Update a student
     public function update(Request $request, string $id)
     {
-        $request->validate([
+        $student = StudentModel::findOrFail($id);
+
+        $validated = $request->validate([
             'firstname' => 'required|string|max:255',
             'middlename' => 'nullable|string|max:255',
             'lastname' => 'required|string|max:255',
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('students', 'email')->ignore($student->id),
+            ],
+            'course' => 'required|string|max:255',
             'year' => 'required|string|max:50',
             'section' => 'required|string|max:100',
+        ], [
+            'email.unique' => 'This email address is already registered.',
+            'email.required' => 'Email address is required.',
+            'email.email' => 'Please enter a valid email address.',
         ]);
 
-        $student = StudentModel::findOrFail($id);
+        $student->update($validated);
 
-        $student->update($request->only([
-            'firstname',
-            'middlename',
-            'lastname',
-            'year',
-            'section',
-        ]));
-
-        return redirect()->route('students.index')
-            ->with('success', 'Student updated successfully.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Student updated successfully.',
+            'data' => $student->fresh()
+        ], 200);
     }
 
     // Delete a student
@@ -78,7 +96,9 @@ class StudentController extends Controller
 
         $student->delete();
 
-        return redirect()->route('students.index')
-            ->with('success', 'Student deleted successfully.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Student deleted successfully.'
+        ], 200);
     }
 }
