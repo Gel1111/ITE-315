@@ -22,7 +22,10 @@ public function run(): void
 
     User::updateOrCreate(
         ['email' => 'user@example.com'],
-        ['name' => 'Regular User', 'password' => 'password123', 'role' => User::ROLE_USER]
+        [
+        'name' => 'Regular User',
+         'password' => 'password123',
+          'role' => User::ROLE_USER]
     );
 }
 }
