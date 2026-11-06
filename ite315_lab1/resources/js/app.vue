@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 import api from './api';
 import AlertMessage from './components/AlertMessage.vue';
-import LoginForm from './components/LoginForm.vue';
+import LoginForm from './components/Login.vue';
 import StudentForm from './components/StudentForm.vue';
 import StudentTable from './components/StudentTable.vue';
 
