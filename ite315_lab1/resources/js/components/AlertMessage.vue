@@ -6,5 +6,7 @@ defineProps({
 </script>
 
 <template>
-    <div v-if="text" class="alert" :class="type">{{ text }}</div>
+    <div v-if="text" class="alert" :class="type">
+        {{ text }}
+    </div>
 </template>
