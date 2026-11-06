@@ -2,18 +2,15 @@
 import { ref, onMounted } from 'vue';
 import api from './api';
 import AlertMessage from './components/AlertMessage.vue';
-import LoginForm from './components/Login.vue';
 import StudentForm from './components/StudentForm.vue';
 import StudentTable from './components/StudentTable.vue';
 
-const user = ref(JSON.parse(localStorage.getItem('user') || 'null'));
 const students = ref([]);
 const loading = ref(false);
 const saving = ref(false);
 const editing = ref(null);
 const formKey = ref(0);
 const errors = ref({});
-const loginError = ref('');
 const alert = ref({ type: 'success', text: '' });
 
 function notify(type, text) {
@@ -21,51 +18,17 @@ function notify(type, text) {
     setTimeout(() => (alert.value.text = ''), 4000);
 }
 
-function clearSession() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    user.value = null;
-    students.value = [];
-}
-
 function handleError(e) {
     const r = e.response;
     if (r?.status === 422) {
         errors.value = r.data.errors;
-        notify('error', 'invalid output');
-    } else if (r?.status === 401) {
-        clearSession();
-        notify('error', 'Session expired. Please log in again.');
+        notify('error', 'Please fix the validation errors below.');
     } else {
         notify('error', r?.data?.message || 'Network error. Is the server running?');
     }
 }
 
-async function login(credentials) {
-    loading.value = true;
-    loginError.value = '';
-    try {
-        const { data } = await api.post('/login', credentials);
-        localStorage.setItem('token', data.data.token);
-        localStorage.setItem('user', JSON.stringify(data.data.user));
-        user.value = data.data.user;
-        notify('success', data.message);
-        await fetchStudents();
-    } catch (e) {
-        loginError.value = e.response?.data?.message
-            || e.response?.data?.errors?.email?.[0]
-            || 'Unable to log in.';
-    } finally {
-        loading.value = false;
-    }
-}
-
-async function logout() {
-    try { await api.post('/logout'); } catch (e) {  }
-    clearSession();
-}
-
-
+// READ
 async function fetchStudents() {
     loading.value = true;
     try {
@@ -78,6 +41,7 @@ async function fetchStudents() {
     }
 }
 
+// CREATE + UPDATE
 async function saveStudent(form) {
     saving.value = true;
     errors.value = {};
@@ -95,6 +59,7 @@ async function saveStudent(form) {
     }
 }
 
+// DELETE
 async function deleteStudent(student) {
     if (!confirm(`Delete ${student.firstname} ${student.lastname}?`)) return;
     try {
@@ -119,42 +84,32 @@ function resetForm() {
     formKey.value++;
 }
 
-onMounted(() => {
-    if (user.value) fetchStudents();
-});
+onMounted(fetchStudents);
 </script>
 
 <template>
     <div class="container">
         <header class="topbar">
             <h1>Student Management</h1>
-            <div v-if="user" class="userbox">
-                <span>{{ user.name }}</span>
-                <button class="btn" @click="logout">Logout</button>
-            </div>
         </header>
 
         <AlertMessage :type="alert.type" :text="alert.text" />
 
-        <LoginForm v-if="!user" :error="loginError" :loading="loading" @login="login" />
+        <StudentForm
+            :key="formKey"
+            :student="editing"
+            :errors="errors"
+            :saving="saving"
+            @submit="saveStudent"
+            @cancel="resetForm"
+        />
 
-        <template v-else>
-            <StudentForm
-                :key="formKey"
-                :student="editing"
-                :errors="errors"
-                :saving="saving"
-                @submit="saveStudent"
-                @cancel="resetForm"
-            />
-
-            <StudentTable
-                :students="students"
-                :is-admin="true"
-                :loading="loading"
-                @edit="startEdit"
-                @delete="deleteStudent"
-            />
-        </template>
+        <StudentTable
+            :students="students"
+            :is-admin="true"
+            :loading="loading"
+            @edit="startEdit"
+            @delete="deleteStudent"
+        />
     </div>
 </template>

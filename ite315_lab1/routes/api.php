@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
 
+/*
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -13,7 +14,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('students', StudentController::class);
 });
 
-/* 
+ 
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('students', StudentController::class)->only(['index', 'show']);
 
