@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import api from './api';
 import AlertMessage from './components/AlertMessage.vue';
 import LoginForm from './components/Login.vue';
@@ -15,8 +15,6 @@ const formKey = ref(0);
 const errors = ref({});
 const loginError = ref('');
 const alert = ref({ type: 'success', text: '' });
-
-const isAdmin = computed(() => user.value?.role === 'admin');
 
 function notify(type, text) {
     alert.value = { type, text };
@@ -43,6 +41,7 @@ function handleError(e) {
     }
 }
 
+// LOGIN / LOGOUT
 async function login(credentials) {
     loading.value = true;
     loginError.value = '';
@@ -63,11 +62,11 @@ async function login(credentials) {
 }
 
 async function logout() {
-    try { await api.post('/logout'); } catch (e) { }
+    try { await api.post('/logout'); } catch (e) { /* token already invalid */ }
     clearSession();
 }
 
-
+// READ
 async function fetchStudents() {
     loading.value = true;
     try {
@@ -80,6 +79,7 @@ async function fetchStudents() {
     }
 }
 
+// CREATE + UPDATE
 async function saveStudent(form) {
     saving.value = true;
     errors.value = {};
@@ -132,7 +132,7 @@ onMounted(() => {
         <header class="topbar">
             <h1>Student Management</h1>
             <div v-if="user" class="userbox">
-                <span>{{ user.name }} <em class="badge">{{ user.role }}</em></span>
+                <span>{{ user.name }}</span>
                 <button class="btn" @click="logout">Logout</button>
             </div>
         </header>
@@ -143,7 +143,6 @@ onMounted(() => {
 
         <template v-else>
             <StudentForm
-                v-if="isAdmin"
                 :key="formKey"
                 :student="editing"
                 :errors="errors"
@@ -151,11 +150,10 @@ onMounted(() => {
                 @submit="saveStudent"
                 @cancel="resetForm"
             />
-            <p v-else class="card">You are logged in as a regular user, so records are read-only.</p>
 
             <StudentTable
                 :students="students"
-                :is-admin="isAdmin"
+                :is-admin="true"
                 :loading="loading"
                 @edit="startEdit"
                 @delete="deleteStudent"
