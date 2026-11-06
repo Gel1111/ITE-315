@@ -1,14 +1,4 @@
-import axios from 'axios';
+import { createApp } from 'vue';
+import App from './App.vue';
 
-const api = axios.create({
-    baseURL: '/api',
-    headers: { Accept: 'application/json' },
-});
-
-api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-});
-
-export default api;
+createApp(App).mount('#app');
