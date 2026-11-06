@@ -32,7 +32,7 @@ function handleError(e) {
     const r = e.response;
     if (r?.status === 422) {
         errors.value = r.data.errors;
-        notify('error', 'Please fix the validation errors below.');
+        notify('error', 'invalid output');
     } else if (r?.status === 401) {
         clearSession();
         notify('error', 'Session expired. Please log in again.');
@@ -41,7 +41,6 @@ function handleError(e) {
     }
 }
 
-// LOGIN / LOGOUT
 async function login(credentials) {
     loading.value = true;
     loginError.value = '';
@@ -62,11 +61,11 @@ async function login(credentials) {
 }
 
 async function logout() {
-    try { await api.post('/logout'); } catch (e) { /* token already invalid */ }
+    try { await api.post('/logout'); } catch (e) {  }
     clearSession();
 }
 
-// READ
+
 async function fetchStudents() {
     loading.value = true;
     try {
@@ -79,7 +78,6 @@ async function fetchStudents() {
     }
 }
 
-// CREATE + UPDATE
 async function saveStudent(form) {
     saving.value = true;
     errors.value = {};
@@ -97,7 +95,6 @@ async function saveStudent(form) {
     }
 }
 
-// DELETE
 async function deleteStudent(student) {
     if (!confirm(`Delete ${student.firstname} ${student.lastname}?`)) return;
     try {
