@@ -22,7 +22,7 @@ function handleError(e) {
     const r = e.response;
     if (r?.status === 422) {
         errors.value = r.data.errors;
-        notify('error', 'Please fix the validation errors below.');
+        notify('error', 'Check input and try again.');
     } else {
         notify('error', r?.data?.message || 'Network error. Is the server running?');
     }
