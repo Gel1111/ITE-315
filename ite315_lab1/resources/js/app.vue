@@ -1,9 +1,10 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import api from './api';
 import AlertMessage from './components/AlertMessage.vue';
 import StudentForm from './components/StudentForm.vue';
 import StudentTable from './components/StudentTable.vue';
+import LoginForm from './components/Login.vue'; 
 
 const students = ref([]);
 const loading = ref(false);
@@ -13,18 +14,63 @@ const formKey = ref(0);
 const errors = ref({});
 const alert = ref({ type: 'success', text: '' });
 
+const token = ref(localStorage.getItem('token'));
+const user = ref(JSON.parse(localStorage.getItem('user') || 'null'));
+const loginLoading = ref(false);
+const loginError = ref('');
+const isAdmin = computed(() => user.value?.role === 'admin');
+
 function notify(type, text) {
     alert.value = { type, text };
     setTimeout(() => (alert.value.text = ''), 4000);
 }
 
+function clearSession() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    token.value = null;
+    user.value = null;
+    students.value = [];
+    resetForm();
+}
+
 function handleError(e) {
     const r = e.response;
-    if (r?.status === 422) {
+    if (r?.status === 401) {
+        clearSession();
+        notify('error', 'Session expired. Please log in again.');
+    } else if (r?.status === 422) {
         errors.value = r.data.errors;
         notify('error', 'Check input and try again.');
     } else {
         notify('error', r?.data?.message || 'Network error. Is the server running?');
+    }
+}
+
+async function handleLogin(credentials) {
+    loginLoading.value = true;
+    loginError.value = '';
+    try {
+        const { data } = await api.post('/login', credentials);
+        token.value = data.data.token;
+        user.value = data.data.user;
+        localStorage.setItem('token', token.value);
+        localStorage.setItem('user', JSON.stringify(user.value));
+        notify('success', data.message);
+        await fetchStudents();
+    } catch (e) {
+        loginError.value = e.response?.data?.message || 'Network error. Is the server running?';
+    } finally {
+        loginLoading.value = false;
+    }
+}
+
+async function handleLogout() {
+    try {
+        await api.post('/logout');
+    } catch (e) {
+    } finally {
+        clearSession();
     }
 }
 
@@ -84,32 +130,48 @@ function resetForm() {
     formKey.value++;
 }
 
-onMounted(fetchStudents);
+onMounted(() => {
+    if (token.value) fetchStudents();
+});
 </script>
 
 <template>
     <div class="container">
         <header class="topbar">
             <h1>Student Management</h1>
+            <div v-if="token && user">
+                <span>{{ user.name }} ({{ user.role }})</span>
+                <button class="btn" @click="handleLogout">Logout</button>
+            </div>
         </header>
 
         <AlertMessage :type="alert.type" :text="alert.text" />
 
-        <StudentForm
-            :key="formKey"
-            :student="editing"
-            :errors="errors"
-            :saving="saving"
-            @submit="saveStudent"
-            @cancel="resetForm"
+        <LoginForm
+            v-if="!token"
+            :error="loginError"
+            :loading="loginLoading"
+            @login="handleLogin"
         />
 
-        <StudentTable
-            :students="students"
-            :is-admin="true"
-            :loading="loading"
-            @edit="startEdit"
-            @delete="deleteStudent"
-        />
+        <template v-else>
+            <StudentForm
+                v-if="isAdmin"
+                :key="formKey"
+                :student="editing"
+                :errors="errors"
+                :saving="saving"
+                @submit="saveStudent"
+                @cancel="resetForm"
+            />
+
+            <StudentTable
+                :students="students"
+                :is-admin="isAdmin"
+                :loading="loading"
+                @edit="startEdit"
+                @delete="deleteStudent"
+            />
+        </template>
     </div>
 </template>
